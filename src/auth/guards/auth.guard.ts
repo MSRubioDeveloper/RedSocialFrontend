@@ -14,7 +14,7 @@ export class AuthGuard implements CanActivate {
 
   //context = un opbj con toda la informacion de la peticion hecha
   async canActivate(context: ExecutionContext): Promise<boolean>{
-    //True = puede entrar a la ruta, falkse, no se puede
+    //True = puede entrar a la ruta, false, no se puede
     const request = context.switchToHttp().getRequest();
     //sacando el token mandado desde el frontend (en la peticion del usuario)
     const token = this.extractTokenFromHeader(request) 

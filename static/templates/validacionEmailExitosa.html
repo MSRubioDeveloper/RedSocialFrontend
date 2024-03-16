@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email validado exitosamente</title>
+    <style>
+        body{
+            background-color: #f3efec;
+        }
+        #content{
+            padding: 10px;
+        }
+
+        #content-container{
+            width: 90%;
+            margin: 0 auto;
+            margin-top: 30px;
+            background-color: white;
+            border: 1px solid #ccc;
+
+            border-radius: 10px;
+
+        }
+        #header{
+            background-color: #000000;
+            padding: 15px;
+            text-align: center;
+        }
+        #header img{
+            width: 160px;
+            
+        }
+
+        #timer{
+            padding-top: 7px;
+            text-align: center;
+            padding: 15px;
+        }
+        #svg{
+            padding-top: 15px;
+            text-align: center;
+            padding-bottom: 20px;
+
+        }
+
+        @media screen and (min-width: 768px) {
+            #content-container{
+                width: 620px;
+            }
+
+        }
+
+    </style>
+</head>
+<body>
+    <div id="content-container">
+        <div id="header">
+            <img src="https://th.bing.com/th/id/R.63b1c8bb26fafd762033e3d7f941b693?rik=BDi1UMRxu%2fM2HA&riu=http%3a%2f%2fpluspng.com%2fimg-png%2femail-png-email-png-2400.png&ehk=GI3By9P0uT3EvxB66zsub6BcB%2bLe7MBoEM3WUwyXRjc%3d&risl=&pid=ImgRaw&r=0" alt="imgSendingImg">
+        </div>
+        <div id="content">
+            <h3>Confirmacion de Email</h3>
+            <p>
+                Tu email ha sido validado correctamente!, 
+                te doy la bienvenida a mi red social, seras redireccionado 
+                de manera automatica en
+
+            </p>
+            <p id="timer">
+               <strong id="timer-seconds">5 segundos</strong>
+            </p>
+            <!--  SVG -->
+            <!-- By Sam Herbert (@sherb), for everyone. More @ http://goo.gl/7AJzbL -->
+            <!-- By Sam Herbert (@sherb), for everyone. More @ http://goo.gl/7AJzbL -->
+            <div id="svg">
+                <svg width="68" height="68" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a">
+                            <stop stop-color="#000000;" stop-opacity="0" offset="0%"/>
+                            <stop stop-color="#000000;" stop-opacity=".631" offset="63.146%"/>
+                            <stop stop-color="#000000" offset="100%"/>
+                        </linearGradient>
+                    </defs>
+                    <g fill="none" fill-rule="evenodd">
+                        <g transform="translate(1 1)">
+                            <path d="M36 18c0-9.94-8.06-18-18-18" id="Oval-2" stroke="url(#a)" stroke-width="2">
+                                <animateTransform
+                                    attributeName="transform"
+                                    type="rotate"
+                                    from="0 18 18"
+                                    to="360 18 18"
+                                    dur="0.9s"
+                                    repeatCount="indefinite" />
+                            </path>
+                            <circle fill="#fff" cx="36" cy="18" r="1">
+                                <animateTransform
+                                    attributeName="transform"
+                                    type="rotate"
+                                    from="0 18 18"
+                                    to="360 18 18"
+                                    dur="0.9s"
+                                    repeatCount="indefinite" />
+                            </circle>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+
+    <script >
+        let timing = 5;
+        let htmlTimer = document.querySelector("#timer-seconds");
+
+        const countdown = setInterval(() => {
+            timing--; // Restar 1 a timing
+            console.log(timing); // Mostrar el valor actual de timing en la consola
+            htmlTimer.innerHTML=`${timing} segundos`;
+
+            // Si timing llega a 0, redireccionar
+            if (timing === 0) {
+                clearInterval(countdown); // Detener el intervalo
+                window.location.href = "http://localhost:4200/auth/login"; // Redireccionar
+            }
+        }, 1000); // 1000 milisegundos = 1 segundo
+    </script>
+</body>
+</html>

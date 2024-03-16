@@ -1,10 +1,9 @@
 import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 // encriptar contraseñas
 import * as bcryptsjs from "bcryptjs"
@@ -13,6 +12,11 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { loginResponse } from './interfaces/login-response';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { EmailService } from './email.service';
+import { registerTemplate } from 'src/email/helpers/templates';
+import { EmailOptions } from 'src/email/interfaces/email-options.interface';
+import { join } from 'path';
+
 
 
 
@@ -21,14 +25,16 @@ export class AuthService {
 
   constructor(
      @InjectModel(User.name) private userModel: Model<User>,
-     private jwtservice: JwtService
+     private jwtservice: JwtService,
+     private emailService: EmailService
   ){
 
   }
 
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<loginResponse> {
     try{
+
         //1.- encriptar contraseñas (byscriptjs)
         const { password, ...userData} =createUserDto;
        //2.- guardar el usuario
@@ -37,11 +43,34 @@ export class AuthService {
           ...userData
         })
         //3.- generar JWT
-        
-         await newUser.save();
          const { password:_ , ...user} = newUser.toJSON();
 
-         return user;
+         //3. Mandamos el link de activacion de cuenta 
+        const token = await this.getJwtToken({id: user._id}, "15m");
+        await newUser.save();
+
+         const url = `${ process.env.WEBSERVICE}/authorization/validate-email/${token}`
+         const emailOptions: EmailOptions = {
+          to: user.email,
+          subject: "Red Social - Verficacion",
+          html: `
+              <h1> Bienvenido! </h1>
+            
+              <p> Para poder validar tu cuenta, porfavor haz click en el siguiente
+              enlace, la validez del token tiene 15 minutos </p>
+          
+              <a href="${url}"> Validar tu email  </a>
+          `
+         };
+          const emailsended = await this.emailService.sendEmailVerification( emailOptions );
+          if( !emailsended ) throw new InternalServerErrorException("Email no enviado - verifica el Email ingresado");
+
+
+          return {
+            user: user,
+            token: token
+          }
+        //  return user;
       
     }catch(error){
       console.log(error.code)
@@ -60,12 +89,14 @@ export class AuthService {
     //procedimiento de registro de usuario
     //usar create() Y RETURN Login response
 
-    const user = await this.create( registerDto)
+      const { user, token } = await this.create( registerDto);
 
-    return {
-      user: user,
-      token: this.getJwtToken({id: user._id})
-    }
+      return {
+        user: user,
+        token: token
+      }
+   
+    
   }
 
   async login(loginDto: LoginUserDto): Promise<loginResponse>{
@@ -73,24 +104,30 @@ export class AuthService {
 
       const user = await this.userModel.findOne({ email})
 
+  
       if( !user ){
-        throw new UnauthorizedException("Not Valid Credentials - email")
+        throw new UnauthorizedException("Not Valid Credentials");
       }
       if( !bcryptsjs.compareSync(password, user.password)){
-        throw new UnauthorizedException("Not Valid Credentials - password")
+        throw new UnauthorizedException("Not Valid Credentials");
       }
+
+      if( user.isActive === false ){
+        throw new UnauthorizedException("Cuenta No validada, revisa tu correo electronico")
+      }
+
 
       const {password:_, ...rest} = user.toJSON();
 
       return{
         user: rest,
-        token: this.getJwtToken({ id: user.id })
+        token: this.getJwtToken({ id: user.id }, "15m")
       }
   }
 
   //JWT 
-  getJwtToken( payload: JwtPayload ){
-    const token = this.jwtservice.sign(payload);
+  getJwtToken( payload: JwtPayload, expiresIn: string ){
+    const token = this.jwtservice.sign(payload, { expiresIn: expiresIn});
     return token;
   }
 
@@ -107,15 +144,52 @@ export class AuthService {
     const { password, ...rest}  = user.toJSON();
     return rest;
   }
-  // findOne(id: number) {
-  //   return `This action returns a #${id} auth`;
-  // }
 
-  // update(id: number, updateAuthDto: UpdateAuthDto) {
-  //   return `This action updates a #${id} auth`;
-  // }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} auth`;
-  // }
+  async findUserByEmail(email: string){
+    const user = await this.userModel.findOne({ email })
+
+    return user;
+  }
+
+
+  public async validateEmail( token: any ){
+    console.log(token)  
+    
+    const payload = await this.jwtservice.verify( token.token );
+    if( !payload ){
+
+      throw new UnauthorizedException("Invalid token");
+    }
+    if( !payload.id ) throw new InternalServerErrorException("id is not in token")
+    console.log( payload.id)
+    const user = await this.userModel.findOne({ _id: payload.id});
+    user.isActive = true;
+    await user.save();
+
+    //retornar template
+    const htmlFilePath = join(__dirname, '../..', 'static/templates/validacionEmailExitosa.html');
+    return  htmlFilePath;
+  }
+
+
+  //TODO Que pasa si el usuario excede los 15 minutos?
+  // deberia haber un metodo de renviar la verificacion! :)
+  // public reSendEmail(token: string, email: string){
+  //   const url = `${ process.env.WEBSERVICE}/authorization/validate-email/${token}`
+  //   const emailOptions: EmailOptions = {
+  //    to: email,
+  //    subject: "Red Social - Verficacion",
+  //    html: `
+  //        <h1> Bienvenido! </h1>
+       
+  //        <p> Para poder validar tu cuenta, porfavor haz click en el siguiente
+  //        enlace, la validez del token tiene 15 minutos </p>
+     
+  //        <a href="${url}"> Validar tu email  </a>
+  //    `
+  //   };
+
+
 }
+

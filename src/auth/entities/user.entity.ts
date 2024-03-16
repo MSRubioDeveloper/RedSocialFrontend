@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Amigo } from "../types/amigo.types";
 
 @Schema()
 export class User {
@@ -14,12 +15,19 @@ export class User {
     @Prop({  required: true})
     name: string;
 
-    @Prop({ default: true})
+    @Prop({ default: false})
     isActive: boolean;
 
     @Prop({type: [String], default: ["user"] })
     roles: string[]
-  static schema: any;
+ 
+    @Prop({ default: ""})
+    imgPerfil?: string;
+
+    @Prop( {type:[Amigo] ,default: []})
+    amigos: Amigo[];
+
+
 
 }
 

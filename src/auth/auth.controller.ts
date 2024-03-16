@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 import { CreateUserDto } from './dto/create-user.dto';
@@ -6,11 +6,16 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { User } from './entities/user.entity';
+import { EmailService } from './email.service';
+import { Response } from 'express';
 
 
-@Controller('auth')
+@Controller('authorization')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+      private readonly authService: AuthService,
+      private readonly emailService: EmailService
+    ) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -18,7 +23,7 @@ export class AuthController {
   }
 
   //login endpoint
-  @Post("login")
+  @Post("/login")
   login(@Body() loginDto: LoginUserDto){
     
     return this.authService.login(loginDto )
@@ -49,8 +54,16 @@ export class AuthController {
 
     return {
       user,
-      token: this.authService.getJwtToken({ id: user._id})
+      token: this.authService.getJwtToken({ id: user._id}, "3h")
     }
+  }
+
+  @Get("/validate-email/:token")
+  public async validateEmailFromRegister(@Param() token: string,
+  @Res() res: Response
+  ){
+    const htmlFile = await this.authService.validateEmail( token);
+    res.sendFile(htmlFile);
   }
 
 }

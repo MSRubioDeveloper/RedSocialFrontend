@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FilesService } from './files.service';
-import { CreateFileDto } from './dto/create-file.dto';
-import { UpdateFileDto } from './dto/update-file.dto';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter, fileNamer } from './helpers';
 import { diskStorage } from 'multer';
@@ -16,10 +15,11 @@ export class FilesController {
   @UseInterceptors(FileInterceptor('file', {
     fileFilter: fileFilter,
     // limits: { fileSize: 1000},
-    storage: diskStorage({
-      destination: "./static/products",
-      filename: fileNamer
-    })
+    // storage: diskStorage({
+    //   destination: "./static/products",
+    //   filename: fileNamer,
+      
+    // })
   }) )
   create(@UploadedFile()file: Express.Multer.File) {
     
@@ -28,9 +28,13 @@ export class FilesController {
 
     
     return {
-      "img": "isd"
+      "img": "isd",
+      "TEST": "VENGO DEL BACKEND"
     }
     // return 
   }
+
+
+ 
 
 }
