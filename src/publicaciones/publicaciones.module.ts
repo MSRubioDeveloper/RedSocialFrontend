@@ -6,6 +6,7 @@ import { Publicacion, PublicacionSchema } from './entities/publicacione.entity';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthModule } from 'src/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { Like, LikeSchema } from './entities/likes.entity';
 
 
 @Module({
@@ -15,7 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule,
     MongooseModule.forFeature([
       { name: Publicacion.name, schema: PublicacionSchema},
-
+      { name: Like.name, schema: LikeSchema},
     ]),
     AuthModule
     

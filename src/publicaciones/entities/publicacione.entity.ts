@@ -1,42 +1,28 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Schema as SchemaMongoose} from "mongoose";
 
 import { Comentario } from "../interfaces/comentario.interface";
 import { Likes } from "../interfaces/likes.interface";
 
+
 @Schema()
 export class Publicacion {
 
+    //Mongo ID
     _id?: string;
 
-    //User
-    @Prop({  required: true})
-    email: string;
-
-    @Prop({  required: true})
-    name: string
-    
-    @Prop({ default: true})
-    isActive: boolean;
-
-    @Prop({type: [String], default: ["user"] })
-    roles: string[]
-
-    @Prop({ default: ""})
-    imgPerfil?: string;
-
+    @Prop({ 
+        type: SchemaMongoose.Types.ObjectId,
+        ref: "User",
+        required: true,
+    })
+    user: SchemaMongoose.Types.ObjectId; 
 
 
 
     @Prop({ required: true })
     text: string;
     
-    @Prop({ type: [Comentario], default: []})
-    comentarios: Comentario[];
-
-
-    @Prop( {type: [String], default: [] })
-    likes: Likes[];
-
 
     @Prop({ required: true})
     secureUrl: string;

@@ -6,7 +6,7 @@ import { FilesModule } from './files/files.module';
 import { PublicacionesModule } from './publicaciones/publicaciones.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
-import { ServeStaticModule } from '@nestjs/serve-static';
+
 
 
 
