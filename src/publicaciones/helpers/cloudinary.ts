@@ -13,15 +13,29 @@ cloudinary.config({
 
 export class CloudinaryService {
 
-    static async sendImage( imgBuffer: any){
+    static async sendImage( imgBuffer: any, folder: string){
       return await new Promise((resolve) => {
-        cloudinary.uploader.upload_stream( {folder:"publicaciones"}, (error, uploadResult)  => {
+        cloudinary.uploader.upload_stream( {folder}, (error, uploadResult)  => {
           if( error ) throw new InternalServerErrorException("Error Cloud" + error)
             resolve(uploadResult);
         }).end(imgBuffer);
     });
-
-
     }
+
+    static async destroy( imgId: string){
+      try{
+        return await cloudinary.uploader.destroy(imgId, { invalidate: true},
+          (result )=>{
+            return {
+              message: "Imagen guardada exitosamente",
+              result
+            }
+          })
+      }catch( err ){
+        throw new InternalServerErrorException("Error al eliminar recurso, verifica img_id");
+      }
+    }
+
+
   
   }

@@ -31,7 +31,7 @@ export class PublicacionesController {
     @Query("limit")  limit: number = 10
   ) {
 
-    return this.filesService.createFile(file, body, page, limit);
+    return this.filesService.addNewPublication(file, body, page, limit);
   }
 
   @UseGuards( AuthGuard )
@@ -92,5 +92,31 @@ export class PublicacionesController {
   }
 
 
+
+
+
+  //subir imagen de perfil
+    @UseGuards( AuthGuard)
+    @Post("/imageProfile") 
+    @UseInterceptors(FileInterceptor('file', {
+      fileFilter: fileFilter,
+      // limits: { fileSize: 1000},
+      // storage: diskStorage({
+      //   destination: "./static/products",
+      //   filename: fileNamer,
+        
+      // })
+    }) )
+    uploadProfileImg(@UploadedFile()file: Express.Multer.File,
+    @Body() idUser: { idUser: string }
+    ) {
+      
+      console.log(file)
+      console.log(idUser)
+      const uploadProfileImage = this.filesService.uploadImageProfile(file, idUser );
+  
+      
+      return uploadProfileImage
+    }
 
 }

@@ -29,6 +29,10 @@ export class Publicacion {
 
     @Prop( { required: true })
     publication_date: string;
+
+
+    @Prop()
+    profileImgSecureUrl?: string
 }
 
 

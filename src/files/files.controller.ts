@@ -31,7 +31,6 @@ export class FilesController {
       "img": "isd",
       "TEST": "VENGO DEL BACKEND"
     }
-    // return 
   }
 
 

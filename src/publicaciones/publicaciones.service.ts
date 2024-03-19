@@ -27,48 +27,47 @@ export class PublicacionesService {
     private readonly configService: ConfigService
   ){}
 
-  
-async createFile(file: Express.Multer.File, body: CreatePublicacionesDto, page: number, limit: number) {
+  async addNewPublication(file: Express.Multer.File, body: CreatePublicacionesDto, page: number, limit: number) {
 
-  const { userId, text }  = body;
+    const { userId, text }  = body;
 
-  const publication_date = new Date();
+    const publication_date = new Date();
 
-  try {
-    //encontrar al usuario
-    const user = await this.UserModel.findOne( { _id: userId } );
-    if( !user ) throw new BadRequestException("Usuario no registrado");
-    //!TODO
-      // subir image a cloudinary
-    const uploadImage = await CloudinaryService.sendImage( file.buffer );
+    try {
+      //encontrar al usuario
+      const user = await this.UserModel.findOne( { _id: userId } );
+      if( !user ) throw new BadRequestException("Usuario no registrado");
+      //!TODO
+        // subir image a cloudinary
+      const uploadImage = await CloudinaryService.sendImage( file.buffer, "publicaciones" );
 
-    console.log(uploadImage[".public_id"])
+      console.log(uploadImage[".public_id"])
 
-    console.log( uploadImage )
-    const publicacion = new this.publicacionModel({
-      user: user._id,
-      text,
-      likes: [],
-      secureUrl: uploadImage["secure_url"],
-      publication_date,
-      imgPublic_id: uploadImage["public_id"]
 
-    });
-    
-    // Save new post
-    const savePost = await this.publicacionModel.create( publicacion )
+      const publicacion = new this.publicacionModel({
+        user: user._id,
+        text,
+        likes: [],
+        secureUrl: uploadImage["secure_url"],
+        publication_date,
+        imgPublic_id: uploadImage["public_id"],
+        //! TODO
+        profileImgSecureUrl: user.imgPerfil || ""
 
-    const allPubs = await this.getAllPub(page, limit);
-    
-    return allPubs
+      });
+      
+      // Save new post
+      const savePost = await this.publicacionModel.create( publicacion )
 
-  } catch (error) {
-    console.error('Error al guardar la imagen:', error);
-    throw error;
+      const allPubs = await this.getAllPub(page, limit);
+      
+      return allPubs
+
+    } catch (error) {
+      console.error('Error al guardar la imagen:', error);
+      throw error;
+    }
   }
-}
-
-
 
 
   async getPublicationById(_id: string): Promise<Publicacion>{
@@ -126,7 +125,6 @@ async createFile(file: Express.Multer.File, body: CreatePublicacionesDto, page: 
   }
 
 
-
   public async like( idPub: string, idUser: string): Promise<boolean>{
     
     const publicacion = await this.getPublicationById( idPub );
@@ -154,7 +152,6 @@ async createFile(file: Express.Multer.File, body: CreatePublicacionesDto, page: 
 
   }
 
-
   public async searchPubLikes(pubAndUseId: PubLikesDto){
  
   
@@ -172,7 +169,6 @@ async createFile(file: Express.Multer.File, body: CreatePublicacionesDto, page: 
       return { idPub: pub.publicacionId, liked: pub.liked}
     })
   }
-
 
   //Encontrar todos los likes asociados a X publicacion
    public async pubLikesCount( PubsID: string){
@@ -200,5 +196,45 @@ async createFile(file: Express.Multer.File, body: CreatePublicacionesDto, page: 
 
 
       return ids;
+  }
+
+
+  //UploadProfileImage
+  public async uploadImageProfile(file: Express.Multer.File
+    , idUser : { idUser: string }
+    ){
+
+    //1. Necesito buscar el usuario
+    const user = await this.UserModel.findOne({
+       _id: idUser.idUser
+    });
+
+    if( !user ) throw new BadRequestException("User doesn´t exists")
+    //2.- si user existe subir su imagen a cloudinary
+    const uploadImage = await CloudinaryService.sendImage( file.buffer, "profile_Image" );
+
+    //3.- eliminar la imagen anterior
+    if(user.imgProfileID){
+      await CloudinaryService.destroy(user.imgProfileID);
+    }
+
+
+    //4. necesito cambiar la img del user ( URL )
+    user.imgPerfil = uploadImage["secure_url"];
+    user.imgProfileID = uploadImage["public_id"]
+    
+    //!TODO: todas las publicaciones hecha spro este usuario cambiales la image profile
+    const publicacionesByUser = await this.publicacionModel.updateMany(
+     { user: user.id},
+     { $set: { profileImgSecureUrl: uploadImage["secure_url"] }}
+    )
+
+    //5.- retornamos succefull
+
+    await user.save();
+    return {
+      success: true,
+      img_url: user.imgPerfil
+    }
   }
 }

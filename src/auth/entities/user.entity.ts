@@ -27,7 +27,8 @@ export class User {
     @Prop( {type:[Amigo] ,default: []})
     amigos: Amigo[];
 
-
+    @Prop({ default: ""})
+    imgProfileID?: string;
 
 }
 
