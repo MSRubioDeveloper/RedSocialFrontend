@@ -12,6 +12,7 @@ import {  join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { Like } from './entities/likes.entity';
 import { PubLikesDto } from './dto/pubLikesDto.dto';
+import { CloudinaryService } from './helpers/cloudinary';
 
 
 
@@ -26,47 +27,48 @@ export class PublicacionesService {
     private readonly configService: ConfigService
   ){}
 
-   async createFile(file: any, body: CreatePublicacionesDto, page: number, limit: number) {
-
-    const { userId, text }  = body;
-
-    const publication_date = new Date();
-
-    try {
-      const uuid = uuidV4();
-      const fileExtension = file.mimetype.split("/")[1];
-
-      const fileName = `${ uuid }.` + fileExtension;     
-
-      const filePath = path.join(__dirname, '..', "..", 'static', 'products', fileName);
-      fs.writeFileSync(filePath, file.buffer); // Guardar la imagen en el directorio
-
-
-      //encontrar al usuario
-      const user = await this.UserModel.findOne( { _id: userId } );
-      if( !user ) throw new BadRequestException("Usuario");
-
-      console.log( new Date())
-      const publicacion = new this.publicacionModel({
-        user: user._id,
-        text,
-        likes: [],
-        secureUrl: `${ this.configService.get("HOST_API") }/${ uuid }.${ fileExtension}`,
-        publication_date
-
-      });
-      
-      // Save new post
-      const savePost = await this.publicacionModel.create( publicacion )
-
-      return await this.getAllPub(page, limit);
-
   
-    } catch (error) {
-      console.error('Error al guardar la imagen:', error);
-      throw error;
-    }
+async createFile(file: Express.Multer.File, body: CreatePublicacionesDto, page: number, limit: number) {
+
+  const { userId, text }  = body;
+
+  const publication_date = new Date();
+
+  try {
+    //encontrar al usuario
+    const user = await this.UserModel.findOne( { _id: userId } );
+    if( !user ) throw new BadRequestException("Usuario no registrado");
+    //!TODO
+      // subir image a cloudinary
+    const uploadImage = await CloudinaryService.sendImage( file.buffer );
+
+    console.log(uploadImage[".public_id"])
+
+    console.log( uploadImage )
+    const publicacion = new this.publicacionModel({
+      user: user._id,
+      text,
+      likes: [],
+      secureUrl: uploadImage["secure_url"],
+      publication_date,
+      imgPublic_id: uploadImage["public_id"]
+
+    });
+    
+    // Save new post
+    const savePost = await this.publicacionModel.create( publicacion )
+
+    const allPubs = await this.getAllPub(page, limit);
+    
+    return allPubs
+
+  } catch (error) {
+    console.error('Error al guardar la imagen:', error);
+    throw error;
   }
+}
+
+
 
 
   async getPublicationById(_id: string): Promise<Publicacion>{
@@ -95,11 +97,11 @@ export class PublicacionesService {
          .skip( (page - 1) * limit )
          .limit( limit )
 
-    const filtredPub = await Promise.all( publicaciones.map(async (publicaciones) =>{
+    const filtredPub = await Promise.all( publicaciones.map(async (pub) =>{
       
-      const user = await this.UserModel.findById( publicaciones.user);
+      const user = await this.UserModel.findById( pub.user);
       return {
-        publicacion: publicaciones,
+        publicacion: pub,
         user: {
           profileImage: user.imgPerfil,
           name: user.name
