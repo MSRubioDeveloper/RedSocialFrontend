@@ -1,11 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Res, BadRequestException, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, UseInterceptors, UploadedFile, Res, BadRequestException, Req, Query } from '@nestjs/common';
 
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter, fileNamer } from './helpers';
 import { PublicacionesService } from './publicaciones.service';
 import { CreatePublicacionesDto } from './dto/create-publicaciones.dto';
-import { Request, Response } from 'express';
+import { Request, Response, query } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { PubLikesDto } from './dto/pubLikesDto.dto';
@@ -27,9 +27,11 @@ export class PublicacionesController {
   }) )
   create(@UploadedFile()file: Express.Multer.File,
   @Body() body: CreatePublicacionesDto,
+  @Query("page") page: number = 1, 
+    @Query("limit")  limit: number = 10
   ) {
 
-    return this.filesService.createFile(file, body);
+    return this.filesService.createFile(file, body, page, limit);
   }
 
   @UseGuards( AuthGuard )
@@ -40,8 +42,11 @@ export class PublicacionesController {
 
   @UseGuards( AuthGuard ) 
   @Get("/getAll")
-  getAllPublciations(){
-    return this.filesService.getAllPub( )
+  getAllPublciations(
+    @Query("page") page: number = 1, 
+    @Query("limit")  limit: number = 10
+  ){
+    return this.filesService.getAllPub( page, limit)
   }
 
   @Get("/:imageName")
@@ -69,11 +74,23 @@ export class PublicacionesController {
   @UseGuards()
   @Post("/getAllLikes")
   getAllLikes( @Body() idPublicaciones: PubLikesDto,
+
   ){
     //Recibimos id de la publicacion
     return this.filesService.searchPubLikes( idPublicaciones)
 
 
   }
+
+  @UseGuards()
+  @Post("/likes/countPubLikes")
+  getPublicationTotalLikes(
+       @Query("pubID") pubID: string
+  ){
+
+    return this.filesService.pubLikesCount( pubID)
+  }
+
+
 
 }

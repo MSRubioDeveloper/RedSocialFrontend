@@ -26,7 +26,7 @@ export class PublicacionesService {
     private readonly configService: ConfigService
   ){}
 
-   async createFile(file: any, body: CreatePublicacionesDto) {
+   async createFile(file: any, body: CreatePublicacionesDto, page: number, limit: number) {
 
     const { userId, text }  = body;
 
@@ -59,7 +59,7 @@ export class PublicacionesService {
       // Save new post
       const savePost = await this.publicacionModel.create( publicacion )
 
-      return await this.getAllPub();
+      return await this.getAllPub(page, limit);
 
   
     } catch (error) {
@@ -83,9 +83,17 @@ export class PublicacionesService {
   }
 
 
-  async getAllPub(){
+  async getAllPub(page: number, limit: number ){
+
+    //VALIDACIONES QUERYS
+    if( isNaN(page) || isNaN(limit) ) throw new BadRequestException("Page and Limit muts be number");
+    if( page <= 0 ) throw new BadRequestException("Page must be greater than 0");
+    if( limit <= 0 ) throw new BadRequestException("Limit must be greater than 0");
+
     const publicaciones =  await this.publicacionModel.find()
-        // .skip( page - 1 )
+         .sort({ publication_date: -1 })
+         .skip( (page - 1) * limit )
+         .limit( limit )
 
     const filtredPub = await Promise.all( publicaciones.map(async (publicaciones) =>{
       
@@ -146,6 +154,9 @@ export class PublicacionesService {
 
 
   public async searchPubLikes(pubAndUseId: PubLikesDto){
+ 
+  
+
 
     const arrayPublicacionesId = JSON.parse( pubAndUseId.idPublicaciones );
 
@@ -158,5 +169,34 @@ export class PublicacionesService {
     return publicacionesLikes.map( pub => {
       return { idPub: pub.publicacionId, liked: pub.liked}
     })
+  }
+
+
+  //Encontrar todos los likes asociados a X publicacion
+   public async pubLikesCount( PubsID: string){
+
+    const arrayPublicacionesId = JSON.parse( PubsID );
+
+    // const likes = await this.likeModel.find({
+    //   publicacionId: pubID,
+    //   liked: true
+
+    // })
+
+    //ADAPTAR 
+    const ids = await Promise.all( arrayPublicacionesId.map(async (IDPUB) =>{
+      
+      const likes = await this.likeModel.find({
+        publicacionId: IDPUB,
+        liked: true
+      });
+      return {
+        publicacionID: IDPUB,
+        likes: likes.length
+      };
+      }))
+
+
+      return ids;
   }
 }
